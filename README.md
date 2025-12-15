@@ -176,7 +176,7 @@ Now let's build a cool demo!
     ```
     *Note: this demo doesn't actually generate user screenshots. It uses some pre-created ones handled a bit later on in this demo
    
-11. Create a BigQuery view on top of the object table named `user_screenshots_view` by running the following SQL query:
+13. Create a BigQuery view on top of the object table named `user_screenshots_view` by running the following SQL query:
 
     ```
     CREATE VIEW Cymbal_Cyber.user_screenshots_view (user_id, gcs_uri)
@@ -194,13 +194,13 @@ To demonstrate this environment at scale, we're going to use two Colab Enterpris
 
 1. From the BigQuery editor, click the down arrow next to the plus icon and create a new empty notebook. If required click the button to enable the API (there may be other APIs the wizard will have you enable).
 
-   <img width="771" height="238" alt="Screenshot 2025-12-13 at 2 50 38 PM" src="https://github.com/user-attachments/assets/3d397478-9070-4184-b302-46341a9879d4" />
+   <img width="1542" height="476" alt="image" src="https://github.com/user-attachments/assets/e8d5baf8-a8e5-4910-ab6c-3cf5e2d2794e" />
 
 2. This first notebook will be the benign users notebook. Within the empty notebook code block, paste in the Python code from [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/benign_users_notebook_code.py). 
 
    Since this notebook is running within BigQuery, the project details will be captured properly, so there shouldn't be anything you need to change within the code itself. But do review how the code works.
 
-   <img width="957" height="651" alt="Screenshot 2025-12-13 at 2 57 18 PM" src="https://github.com/user-attachments/assets/65221711-6ec2-4668-b446-22268cb5df33" />
+   <img width="1914" height="1302" alt="image" src="https://github.com/user-attachments/assets/e57a7edd-5b1e-4fef-9427-9a91370d31fa" />
 
 3. Create a separate second BigQuery Colab notebook for the malicious events generator. Within the empty notebook code block, paste in the Python code from [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/malicious_users_notebook_code.py). 
 
@@ -208,18 +208,18 @@ To demonstrate this environment at scale, we're going to use two Colab Enterpris
 
 4. For each notebook, click the Connect button on the right side of the screen to connect the runtime. You may need to select a VPC network to use. Give the connection process a minute to activate, represented by a green check mark.
 
-   <img width="1185" height="158" alt="Screenshot 2025-12-13 at 2 59 57 PM" src="https://github.com/user-attachments/assets/083bbcda-4c47-4280-96de-7634b003b1f4" />
+   <img width="2370" height="316" alt="image" src="https://github.com/user-attachments/assets/82720fd5-06c8-40f2-9ab8-b03fcca0fb87" />
 
 5. Run both notebooks independently. The benign notebook will continue to run in a streaming looped fashion until stopped and the malicious events notebook will only execute once and insert 250 malicious events into the BigQuery tables created previously.
 
 6. Ensure both the `network_events` and `user_access_events` tables in BigQuery are receiving the traffic by running some simple SELECT queries
    First to make sure the benign users notebook is working:
    
-   <img width="1081" height="404" alt="Screenshot 2025-12-13 at 3 14 18 PM" src="https://github.com/user-attachments/assets/2fddd790-edf1-4d0b-8114-c6837b516098" />
+   <img width="2162" height="808" alt="image" src="https://github.com/user-attachments/assets/6dbc7e8b-6f0b-466c-9284-a4e2c70d7d71" />
 
    Then to make sure the malicious users notebook is working:
    
-   <img width="1057" height="409" alt="Screenshot 2025-12-13 at 3 17 00 PM" src="https://github.com/user-attachments/assets/14458c04-ea01-4bd7-b728-5e3c304155d9" />
+   <img width="2114" height="818" alt="image" src="https://github.com/user-attachments/assets/824a8a8f-37ce-4dae-8034-f02c91e93a11" />
 
 **Setting up Agent Developer Kit (ADK) and the mechanism for triggering ADK:**
 
