@@ -24,7 +24,9 @@ from .tools import (
 )
 
 # --- Configuration ---
+# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "bigquery-demos-project")
+# --- UNIQUE PROJECT CONFIGURATION DETAILS ABOVE ---
 DATASET_ID = os.getenv("BIGQUERY_DATASET", "Cymbal_Cyber")
 MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
