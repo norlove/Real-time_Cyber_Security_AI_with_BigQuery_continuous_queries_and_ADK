@@ -1,0 +1,403 @@
+# Real-time Cyber Security AI with BigQuery continuous queries and Agent Developer Kit (ADK)
+
+This repository contains an end-to-end demonstration of a near real-time cybersecurity threat detection and response system built on Google Cloud using only SQL and agentic prompts. 
+
+This demo leverages a powerful combination of Google Cloud services to create a sophisticated, and yet simple, event-driven architecture. At its core, it uses [BigQuery continuous queries](https://docs.cloud.google.com/bigquery/docs/continuous-queries-introduction) to perform stateful stream processing on high-volume event data, identifying suspicious patterns in near real-time. When a potential threat is detected, it triggers a workflow orchestrated by Google's [Agent Developer Kit (ADK)](https://google.github.io/adk-docs/). This powerful framework allows for the creation of sophisticated AI agents that can perform further investigation, including multi-modal analysis of user screenshots, to determine the true nature of the threat. Confirmed threats are then escalated to a human-operated Security Operations Center (SOC) for final review and action.
+
+**Demo architecture diagram:**
+
+  <img width="1159" height="494" alt="Screenshot 2025-12-13 at 12 59 34 AM" src="https://github.com/user-attachments/assets/615fb4ab-30b4-4279-aa24-98890dfa1cc0" />
+
+**Key features:**
+- Stateful Stream Processing: Utilizes BigQuery continuous queries to perform windowed aggregations and JOINs on streaming data, enabling complex event correlation and threat detection in near real-time to trigger agentic AI processing.
+- Agentic AI: Employs the Agent Developer Kit (ADK) to build and deploy multiple intelligent agents that can autonomously assess and reason about security threats by using tools such as Google Search, BigQuery, visual analysis of screenshots.
+- Event-Driven Architecture: Leverages Pub/Sub to create a decoupled, scalable architecture where events from BigQuery trigger actions in ADK.
+- Synthetic Data Generation: Uses Google Cloud Colab notebooks to generate realistic, high-volume streams of both benign and malicious network events.
+- Multi-Modal Analysis: Demonstrates the use of BigQuery object tables to enable the AI agent to perform visual analysis of user screenshots as part of its investigation.
+- Human-in-the-Loop: Includes a simple Security Operations Center (SOC) UI built with Streamlit, allowing human analysts to review and act upon threats escalated by the AI agent.
+- Simple agent logging and analytics using [BigQuery Agent Analytics for the Google ADK](https://cloud.google.com/blog/products/data-analytics/introducing-bigquery-agent-analytics).
+
+You can watch a recording of this demo here: **YouTube LINK**
+
+**A few notes**: 
+   - BigQuery continuous query stateful data processing (supporting aggregations, windowing, and join operations) are only available via an allowlist only preview. You can register your interest for this preview [HERE](https://forms.gle/PUhnigiWDJDWNbWA9).
+   - The steps in this repo are intentionally exhaustive, rather than using a script to auto deploy everything. That's because I find that using auto deploy options substancially reduce learning opportunies. 
+   - Some steps require that you provide your own variable names (project IDs, GCS buckets, GCP region, etc), which requires some small code modifications in certain files. Any time you see "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" within a file that means you'll have to add your own names here.
+   - A special thanks to [Kamal Aboul-Hosn](https://www.linkedin.com/in/kamalaboulhosn/) for providing help with Pub/Sub and [Rachael Deacon-Smith](https://www.linkedin.com/in/rachael-ds/) for providing help with ADK!
+
+Now let's build a cool demo!
+
+----------------------------------------------------------------------------------------------------
+
+
+**Setting up your project with BigQuery, GCS, and service account resources:**
+
+1. Ensure your project has enabled the [BigQuery Unified API](https://console.cloud.google.com/apis/library/bigqueryunified.googleapis.com), [Vertex AI API](https://console.cloud.google.com/apis/library/aiplatform.googleapis.com), [Pub/Sub API](https://console.cloud.google.com/apis/library/pubsub.googleapis.com), [IAM Service Account Credentials API](https://console.cloud.google.com/marketplace/product/google/iamcredentials.googleapis.com), and [Cloud Resource Manager API](https://console.developers.google.com/apis/api/cloudresourcemanager.googleapis.com)
+
+2. Ensure your user account has the appropriate IAM permissions to administer BigQuery, GCS, Pub/Sub, Vertex AI, and Service Accounts. 
+
+   The required IAM roles are:
+   - BigQuery Data Editor (to create BQ resources)
+   - BigQuery Connection Admin (to create a remote connection)
+   - BigQuery Resource Editor (to create a slot reservation and assignment)
+   - BigQuery User (to run the continuous query)
+   - Storage Admin (to create GCS buckets and upload files)
+   - Service Account Admin (to create a service account)
+   - Project IAM Admin (to assign permissions to the service account)
+   - Pub/Sub Editor (to create a Pub/Sub topic and subscription)
+   - Vertex AI Administrator (to deploy ADK into Vertex AI Agent Engine)
+
+4. Within the BigQuery editor, create a BigQuery dataset named `Cymbal_Cyber` in your project by running the following SQL query. Note the region used if yours differs:
+
+   ```
+   #Creates a dataset named Cymbal_Cyber within your currently selected project
+    CREATE SCHEMA IF NOT EXISTS Cymbal_Cyber
+    OPTIONS (
+      location = "US"
+    );
+   ```
+2. Similarly, create a BigQuery table named `user_access_events` within this dataset for where the raw network access logs will be streamed to.
+
+   ```
+   CREATE OR REPLACE TABLE `Cymbal_Cyber.user_access_events`
+   (
+     event_timestamp TIMESTAMP,
+     event_type STRING,
+     user_id STRING,
+     source_ip STRING,
+     assigned_internal_ip STRING,
+     device_id STRING,
+     device_os STRING,
+     user_agent STRING,
+     application_name STRING
+   )
+   PARTITION BY
+     DATE(event_timestamp)
+   CLUSTER BY
+     user_id, assigned_internal_ip, event_type
+   OPTIONS(
+     description="Logs user login attempts and session creation, linking users to assigned internal IPs."
+   );
+   ```
+
+3. Create a BigQuery table named `network_events` for where the network connection and firewall access logs will be streamed to.
+
+   ```
+   CREATE OR REPLACE TABLE `Cymbal_Cyber.network_events`
+   (
+     event_timestamp TIMESTAMP,
+     event_type STRING,
+     user_id STRING,
+     source_ip STRING,
+     source_port INT64,
+     destination_ip STRING,
+     destination_port INT64,
+     protocol STRING,
+     bytes_transferred INT64,
+     source_process_name STRING,
+     network_domain STRING,
+     file_name STRING,
+     file_type STRING,
+     command_line STRING,
+     permission_level_requested STRING,
+     file_hash_sha256 STRING
+   )
+   PARTITION BY
+     DATE(event_timestamp)
+   CLUSTER BY
+     source_ip, user_id, event_type
+   OPTIONS(
+     description="Logs granular network activity like DNS queries, connections, and file transfers."
+   );
+   ```
+
+4. Create a BigQuery table named `adk_threat_assessment` for storing the final output and reasoning from the ADK agent workflow for each escalated network threat.
+
+   ```
+   CREATE OR REPLACE TABLE `Cymbal_Cyber.adk_threat_assessment` (
+     transaction_window_end TIMESTAMP,
+     user_id STRING,
+     device_id STRING,
+     source_ip STRING,
+     total_2_min_threat_score INT64,
+     agent_decision STRING,
+     agent_reason STRING,
+     human_decision STRING,
+     human_reason STRING,
+     alert_payload STRING
+   ) OPTIONS (
+     description = 'Stores the final output and reasoning from the ADK agent workflow.'
+   );
+   ```
+
+5. Create a BigQuery remote connection for the object tables named `continuous-query-vertex-ai-connection` in the Cloud Console [using these steps](https://cloud.google.com/bigquery/docs/bigquery-ml-remote-model-tutorial#Create-Connection).
+
+6. After the connection has been created, click "Go to connection", and in the Connection Info pane, copy the service account ID for use in the next step.
+
+   <img width="811" height="267" alt="Screenshot 2025-12-13 at 2 25 32 PM" src="https://github.com/user-attachments/assets/e9b409f6-d457-4130-ae20-9a0dacf1d925" />
+   
+7. Grant `Vertex AI User` and `Storage Object Viewer` role IAM access to the service account ID you just copied.
+
+8. Create a Service Account named `bq-continuous-query-sa` which will be leveraged to orchestrate the full demo. The service account will be used to run the continuous query, write data to Pub/Sub, perform ADK actions, write to GCS, etc. This service account will require the following permissions:
+    - BigQuery Connection User
+    - BigQuery Data Editor
+    - BigQuery Data Viewer
+    - BigQuery User
+    - Logs Writer
+    - Pub/Sub Publisher
+    - Pub/Sub Viewer
+    - Service Account Token Creator
+    - Service Usage Consumer
+    - Storage Object User
+    - Vertex AI User (AKA AI Platform User)
+    
+      <img width="816" height="360" alt="Screenshot 2025-12-13 at 2 36 32 PM" src="https://github.com/user-attachments/assets/fda92cfe-0f49-42cd-bcc5-5d31738b144b" />
+
+    **NOTE: if you have issues with this demo, it is 9 times out of 10 related to an IAM permissions issue.**
+   
+9. Within the Cloud Console, create three GCS buckets. 
+
+    **Note: because GCS buckets must be gloably unique, you'll have to choose unique names which will be leveraged later on**
+    
+     -  cymbal_cyber_adk_staging_bucket_<your_project_id> for staging the Agent Engine files
+     -  cymbal-cyber-adk-escalations-bucket_<your_project_id> for the events ADK escalates to the human SOC team
+     -  cymbal-cyber-screenshots_<your_project_id> for the screenshot images used in the multi-modal piece of the demo
+
+10. This demo uses ADK to perform a visual analysis of screnshots taken from the user's device at the time these events were generated*. This is done using [BigQuery objects tables](https://docs.cloud.google.com/bigquery/docs/object-table-introduction). We'll first create a BigQuery object table named `screenshots_object_table` by running the following SQL query back in the BigQuery editor:
+
+    ```
+    CREATE OR REPLACE EXTERNAL TABLE `Cymbal_Cyber.screenshots_object_table`
+    WITH CONNECTION `us.continuous-query-vertex-ai-connection`
+    OPTIONS (
+      object_metadata = 'SIMPLE',
+      # --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---
+      uris = ['gs://cymbal-cyber-screenshots_<your_project_id>/*'] #Change this to your own GCS bucket name
+    );
+    ```
+    *Note: this demo doesn't actually generate user screenshots. It uses some pre-created ones handled a bit later on in this demo
+   
+11. Create a BigQuery view on top of the object table named `user_screenshots_view` by running the following SQL query:
+
+    ```
+    CREATE VIEW Cymbal_Cyber.user_screenshots_view (user_id, gcs_uri)
+    AS (
+      SELECT
+        -- Extracts 'a.smith' from a URI like 'gs://bucket/a.smith.png'
+        REGEXP_EXTRACT(uri, r'([^/]+)\.png$') AS user_id,
+        uri AS gcs_uri
+      FROM `Cymbal_Cyber.screenshots_object_table`)
+    ```
+
+**Streaming user/device network events into BigQuery:**
+
+To demonstrate this environment at scale, we're going to use two Colab Enterprise notebook in BigQuery [ref]. One notebook which continuously runs and generates benign, but realistic events, including occasional firewall violations, failed login attempts, etc. And another malicious users notebook which runs ad-hoc and inserts more malicious networking events.
+
+1. From the BigQuery editor, click the down arrow next to the plus icon and create a new empty notebook. If required click the button to enable the API (there may be other APIs the wizard will have you enable).
+
+   <img width="771" height="238" alt="Screenshot 2025-12-13 at 2 50 38 PM" src="https://github.com/user-attachments/assets/3d397478-9070-4184-b302-46341a9879d4" />
+
+2. This first notebook will be the benign users notebook. Within the empty notebook code block, paste in the Python code from [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/benign_users_notebook_code.py). 
+
+   Since this notebook is running within BigQuery, the project details will be captured properly, so there shouldn't be anything you need to change within the code itself. But do review how the code works.
+
+   <img width="957" height="651" alt="Screenshot 2025-12-13 at 2 57 18 PM" src="https://github.com/user-attachments/assets/65221711-6ec2-4668-b446-22268cb5df33" />
+
+3. Create a separate second BigQuery Colab notebook for the malicious events generator. Within the empty notebook code block, paste in the Python code from [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/malicious_users_notebook_code.py). 
+
+   Similarly, you shouldn't have to modify the code if you are using the natively integrated Colab notebooks within BigQuery.
+
+4. For each notebook, click the Connect button on the right side of the screen to connect the runtime. You may need to select a VPC network to use. Give the connection process a minute to activate, represented by a green check mark.
+
+   <img width="1185" height="158" alt="Screenshot 2025-12-13 at 2 59 57 PM" src="https://github.com/user-attachments/assets/083bbcda-4c47-4280-96de-7634b003b1f4" />
+
+5. Run both notebooks independently. The benign notebook will continue to run in a streaming looped fashion until stopped and the malicious events notebook will only execute once and insert 250 malicious events into the BigQuery tables created previously.
+
+6. Ensure both the `network_events` and `user_access_events` tables in BigQuery are receiving the traffic by running some simple SELECT queries
+   First to make sure the benign users notebook is working:
+   
+   <img width="1081" height="404" alt="Screenshot 2025-12-13 at 3 14 18 PM" src="https://github.com/user-attachments/assets/2fddd790-edf1-4d0b-8114-c6837b516098" />
+
+   Then to make sure the malicious users notebook is working:
+   
+   <img width="1057" height="409" alt="Screenshot 2025-12-13 at 3 17 00 PM" src="https://github.com/user-attachments/assets/14458c04-ea01-4bd7-b728-5e3c304155d9" />
+
+**Setting up Agent Developer Kit (ADK) and the mechanism for triggering ADK:**
+
+Now we'll actually get to the agentic portion of this demo. FYI you'll have to make some code changes in this section. 
+
+Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" means you'll have to change something like your project ID, GCS bucket name, etc.
+
+1. Copy all the code within this GitHub repo to your local dev environment. For simplicity, I used Google Cloud Shell within my project.
+
+2. You'll need to install some packages in your local environment. Run the following from the Cloud Shell CLI:
+   ```
+   pip install "google-adk>=1.15.1" \
+   "google-cloud-aiplatform[adk,agent_engines]>=1.119.0" \
+   google-cloud-pubsub \
+   google-genai \
+   google-cloud-logging \
+   google-cloud-bigquery \
+   google-cloud-storage \
+   db-dtypes \
+   pandas \
+   cloudpickle \
+   pydantic \
+   python-dotenv 
+   ```
+
+3. Copy the 55 screenshots from the [user_screenshots folder of this repo](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/tree/main/user_screenshots) into your GCS bucket `cymbal-cyber-screenshots_<your_project_id>`. 
+
+   Rather than copying/moving the images to your GCS bucket, save some time by running a GCloud command like this:
+   ```gcloud storage cp -r user_screenshots/ gs://cymbal-cyber-screenshots_<your_project_id>/```
+
+   You may notice that of the 55 users, 53 users have the same generic screenshot of a BigQuery search console except for the two users g.harris and u.lewis. These two users are our malicious users which will be discussed later on. The other
+   screenshots are the same purely for the purposes of avoiding needless busy work.
+
+4. Change to your ADK_code folder and run the command ```python deploy_agent_script.py``` to deploy your ADK agentic framework into the Google Cloud Agent Engine ecosystem
+    - You'll see something like this printed if the command runs successfully: `https://us-central1-aiplatform.googleapis.com/v1/projects/271115234308/locations/us-central1/reasoningEngines/7320420874383785984:streamQuery`
+    - Copy this text as you'll need it later as your full agent resource ID!
+      <img width="1126" height="112" alt="Screenshot 2025-12-13 at 12 34 29 AM" src="https://github.com/user-attachments/assets/186e82da-234c-4709-8e51-328ec52da4b1" />
+     
+5. Create the Pub/Sub topic named `cymbal_cyber_alerts` to receive the output from your BigQuery continuous query. Don't create any default subscription or anything.
+
+6. Create a Pub/Sub **PUSH** subscription named `adk_agent_trigger` connected to `cymbal_cyber_alerts` to write these events directly to ADK running in Agent Engine.
+    - The Endpoint URL will be the full agent resource ID you captured above. Be sure to include everything, including the `:streamQuery` at the end.
+    - Check the Enable authentication check box, and provide the service account you created and permissioned before
+    - For the Audience (optional) field include the same full agent resource ID you captured above.
+    - Check the box "Enable payload unwrapping"
+    
+      <img width="511" height="602" alt="Screenshot 2025-12-13 at 9 48 15 PM" src="https://github.com/user-attachments/assets/71592f03-61f6-4d18-8801-885cebf6f9f2" />
+   
+    - Change the Expiration period to "Never expire"
+    - Change the acknowledgement deadline to 600 seconds
+    - Click "Add a Transform" and under the "Function Name" box name it "pubsub_to_adk_transform" and copy/paste the contents of the [pubsub_to_adk_transform.js file](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/pubsub_to_adk_transform.js)
+    - Click the "Validate" button and ensure the validation passes
+    
+      <img width="713" height="528" alt="Screenshot 2025-12-13 at 9 51 38 PM" src="https://github.com/user-attachments/assets/b4af797b-5206-4c77-b70f-295dbc482b62" />
+
+    - Create the Pub/Sub subscription
+ 
+    **NOTE: Anytime you re-deploy your agent in Agent Engine using the ```python deploy_agent_script.py``` script, you'll get a new Agent Engine resource ID. This means you'll have to update BOTH the Endpoint URL and Audience fields within this Pub/Sub subscription in order to ensure the Pub/Sub message is sent to the updated ADK environment.**
+   
+7. Your agent should now be running and ready to start processing incoming messages. We'll run a few tests to make sure Pub/Sub and ADK are configured correctly shortly.
+
+8. But first, we'll run the Security Operations Center (SOC) UI using Streamlit. So let's install it by running:
+
+   ```pip install streamlit streamlit-autorefresh```
+
+
+9. Open the Google Cloud Shell and change directories to the other_code folder and start the Streamlit UI app by running:
+
+   ```streamlit run streamlit_app.py --server.enableCORS=false```
+
+   This is one file where you'll have to change some variables.
+
+   <img width="1288" height="305" alt="Screenshot 2025-12-13 at 10 03 33 PM" src="https://github.com/user-attachments/assets/23e2d4cb-a220-4b3a-ad56-9e59db565e87" />
+
+10. Click the Local URL link provided with the specific port (`Local URL: http://localhost:8501`). This will open up a new tab where you will see the security alerts as they come in.
+
+    <img width="1141" height="473" alt="Screenshot 2025-12-13 at 10 07 23 PM" src="https://github.com/user-attachments/assets/5ceed0d5-502d-4eb3-a758-3b0e2014c7a7" />
+
+11. Back within Cloud Shell let Streamlit keep running. Click the plus icon to open another CLI window, change directories to ADK_code, and run the run_local script by running the command:
+    ```./run_local.sh``` 
+    
+    If this is your first run, some packages may need to be installed.
+
+    When prompted, select option 1 to send the malicious event to ADK. You should see a series of messages in your Cloud Shell environment which indicate that the event is being processed by our ADK agent. Once the prompt is "Human handoff request sent. Waiting for a response ..." you'll open your Streamlit tab.
+
+    <img width="1479" height="343" alt="Screenshot 2025-12-14 at 1 18 01 AM" src="https://github.com/user-attachments/assets/9559c46f-7aff-4ea9-9271-9d2135a8f712" />
+
+12. Go back into your Streamlit UI tab where you will see a new alert has been received. If you don't see one, you may have to refresh the window. Click on this alert on the left hand panel and review the details in the right hand panel. Click the "Link to user desktop screenshot" and make sure everything appears correct.
+
+    <img width="1410" height="394" alt="Screenshot 2025-12-14 at 1 18 41 AM" src="https://github.com/user-attachments/assets/a7340e3c-8843-42e2-95b6-3d7364157629" />
+        -   -   -   -  
+    <img width="1263" height="731" alt="Screenshot 2025-12-07 at 3 45 38 PM" src="https://github.com/user-attachments/assets/a8678a9a-f2b7-40d9-8ec2-074bfc256396" />
+
+13. Under the Your Response section, check the box for Flase Positive or Genuine Threat and provide a brief comment. Then click the Submit Response button.
+
+    <img width="911" height="367" alt="Screenshot 2025-12-14 at 1 19 54 AM" src="https://github.com/user-attachments/assets/f9e9de8a-41a2-4636-ba52-72eacbd3545f" />
+
+14. Back in your Cloud Shell tab, you'll see that the human decision was logged successfully and al pending logs should have been sent.
+
+    <img width="540" height="109" alt="Screenshot 2025-12-14 at 1 26 28 AM" src="https://github.com/user-attachments/assets/32626096-262b-499b-b5d5-0022332a9d1e" />
+
+15. You can now query your `adk_threat_assessment` table from BigQuery and confirm that this event and the human decision were successfully logged to BigQuery.
+
+    <img width="1115" height="340" alt="Screenshot 2025-12-14 at 1 27 13 AM" src="https://github.com/user-attachments/assets/292aa2b0-1aaf-4a71-b03e-15a58fac2103" />
+
+16. You can now be confident that ADK is working properly.
+
+17. You can also query the `agent_events` table to see the logs from your agent
+
+    <img width="1063" height="346" alt="Screenshot 2025-12-14 at 1 22 51 AM" src="https://github.com/user-attachments/assets/60594256-41e8-451e-9a20-530f539b8a19" />
+
+18. To test that Pub/Sub is working and triggering ADK properly, use the Cloud Console web UI to navigate to your Pub/Sub topic `cymbal_cyber_alerts`. Within the middle of the page, click the Messages tab and click Publish message
+
+    <img width="677" height="203" alt="Screenshot 2025-12-14 at 1 25 43 AM" src="https://github.com/user-attachments/assets/ca9d7c6e-71aa-488e-bb95-9ad1f46df31f" />
+
+19. Test if your subscription (and therefore ADK) can receive a manually published message by pasting in the below and clicking Publish.
+    ```
+    {
+    "window_end": "2025-12-09T17:42:00Z",
+    "user_id": "u.lewis",
+    "device_id": "ws-hr-05",
+    "source_ip": "175.45.177.32",
+    "total_2_min_threat_score": 3000,
+    "max_event_score": 205,
+    "avg_event_score": 115.38,
+    "high_privilege_request_count": 8,
+    "suspicious_user_agent_count": 26,
+    "risky_file_transfer_count": 4,
+    "malicious_command_count": 8,
+    "malicious_dns_count": 14
+    }
+    ```
+
+20. Go back to your Streamlit application tab. It will likely take 1-2 minutes for the event to arrive. Confirm it does.
+
+**Setting up your BigQuery continuous query to tie all this together and trigger ADK in near real-time:**
+
+1. BigQuery continuous queries require a BigQuery Enterprise or Enterprise Plus reservation [[ref](https://cloud.google.com/bigquery/docs/continuous-queries-introduction#reservation_limitations)]. Create one now named "bq-continuous-queries-reservation" in the US multi-region, with a max reservation size of 50 slots, and a slot baseline of 0 slots (to leverage slot autoscaling).
+   
+   ![Screenshot 2025-04-24 at 1 50 22 PM](https://github.com/user-attachments/assets/36ae54de-05fb-4cb7-a88f-a73ff92c73b4)
+
+2. Once the reservation has been created, click on the three dots under Actions, and click "Create assignment". 
+
+      <img width="212" alt="Screenshot 2024-08-01 at 6 26 21 PM" src="https://github.com/user-attachments/assets/2d71fe08-d3c0-4d35-ab4a-769120f535e4">
+
+3. Click Browse and find the project you are using for this demo. Then Select "CONTINUOUS" as the Job Type. Click Create.
+
+   <img width="523" height="452" alt="Screenshot 2025-12-14 at 2 05 24 PM" src="https://github.com/user-attachments/assets/af3e7d8a-20dd-4b96-970a-1b3489b72cfb" />
+
+4. You'll now see your assignment created under your reservation:
+   
+   <img width="1106" height="157" alt="Screenshot 2025-12-14 at 2 06 17 PM" src="https://github.com/user-attachments/assets/49979c11-8f6f-4a8a-ac9f-d6a346bdb3a6" />
+      
+5. Go back to the BigQuery SQL editor and paste the SQL query found into a new tab [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/continuous_query.sql)
+
+6.  Before you can run your query, you must enable BigQuery continuous query mode. In the BigQuery editor, click More -> Continuous Query mode
+
+    <img width="957" height="290" alt="Screenshot 2025-12-14 at 2 08 09 PM" src="https://github.com/user-attachments/assets/a9c64a75-7a44-4a27-8f91-4b19a9a56242" />
+
+7. When the window opens, click the button CONFIRM to enable continuous queries for this BigQuery editor tab.
+
+8. Since we are writing the results of this continuous query to a Pub/Sub topic, you must also run this query using a Service Account [[ref](https://cloud.google.com/bigquery/docs/continuous-queries#choose_an_account_type)]. We'll use the service account we created earlier. Click More -> Query Settings and scroll down to the Continuous query section and select your service account "bq-continuous-query-sa" and click Save.
+
+   <img width="435" height="150" alt="Screenshot 2025-12-14 at 2 09 13 PM" src="https://github.com/user-attachments/assets/b5eb30d1-f229-44aa-a421-b1b13474073b" />
+
+9. Your continuous query should now be valid.
+
+   <img width="762" height="358" alt="Screenshot 2025-12-14 at 2 10 17 PM" src="https://github.com/user-attachments/assets/41373b47-17ee-43f7-a31b-0ed9245078a0" />
+
+    
+10. Start up the continuous query (FYI it generally takes 1 - 3 minutes to fully start and begin processing data), start the benign events generator notebook, and when ready initiate the malicious events notebook.
+
+11. Go to Streamlit and confirm you are seeing both benign events, but more importantly the malicious events. Again remember that due to the 2 minute window in the continuous query and ADK processing, it will likely take 3-4 minutes for the events to arrive for the malicious users g.harris and u.lewis.
+
+12. Your demo now works!
+
+13. If you go back into BigQuery and query the `adk_threat_assessment` and `agent_events` tables, there's a variety of interesting insights you can glean. Such as:
+    - [How much noise is the Agent filtering out?](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/agent_filtering_noise.sql) This query breaks down the decisions to show what percentage of alerts were auto-closed (False Positives) versus how many required human attention.
+    - [Top 5 high-risk devices](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/top_suspicious_devices.sql). This query tells you which devices are most of the escalated threats coming from.
+    - [Most used ADK tools with errors](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/tool_usage_and_errors.sql). This query tells you what tool calls your agent made and captures any tool errors.
+    - [ADK token cost](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/adk_token_cost.sql). This query determines the number of tokens consumed by each ADK agent, allowing you to estimate costs.
