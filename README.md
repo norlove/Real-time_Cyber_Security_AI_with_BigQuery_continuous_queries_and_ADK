@@ -229,9 +229,16 @@ To demonstrate this environment at scale, we're going to use two Colab Enterpris
 
 Now we'll actually get to the agentic portion of this demo. FYI you'll have to make some code changes in this section. 
 
-Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" means you'll have to change something like your project ID, GCS bucket name, etc.
-
 1. Copy all the code within this GitHub repo to your local dev environment. For simplicity, I used Google Cloud Shell within my project.
+
+  Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" means you'll have to change something like your project ID, GCS bucket name, etc.
+  The files that will need some modification include:
+  - ADK_code/bigquery_agent_app/agent.py
+  - ADK_code/bigquery_agent_app/tools.py
+  - ADK_code/deploy_agent_script.py
+  - ADK_code/run_local.sh
+  - other_code/continuous_query.sql
+  - other_code/streamlit_app.py
 
 2. You'll need to install some packages in your local environment. Run the following from the Cloud Shell CLI:
    ```
