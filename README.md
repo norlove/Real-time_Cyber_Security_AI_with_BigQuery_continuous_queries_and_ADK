@@ -6,7 +6,7 @@ This demo leverages a powerful combination of Google Cloud services to create a 
 
 **Demo architecture diagram:**
 
-  <img width="1159" height="494" alt="Screenshot 2025-12-13 at 12 59 34 AM" src="https://github.com/user-attachments/assets/615fb4ab-30b4-4279-aa24-98890dfa1cc0" />
+  <img width="1159" height="494" alt="image" src="https://github.com/user-attachments/assets/105144ef-de7f-41c7-8d73-5a1995fbbfa2" />
 
 **Key features:**
 - Stateful Stream Processing: Utilizes BigQuery continuous queries to perform windowed aggregations and JOINs on streaming data, enabling complex event correlation and threat detection in near real-time to trigger agentic AI processing.
@@ -47,7 +47,7 @@ Now let's build a cool demo!
    - Pub/Sub Editor (to create a Pub/Sub topic and subscription)
    - Vertex AI Administrator (to deploy ADK into Vertex AI Agent Engine)
 
-4. Within the BigQuery editor, create a BigQuery dataset named `Cymbal_Cyber` in your project by running the following SQL query. Note the region used if yours differs:
+3. Within the BigQuery editor, create a BigQuery dataset named `Cymbal_Cyber` in your project by running the following SQL query. Note the region used if yours differs:
 
    ```
    #Creates a dataset named Cymbal_Cyber within your currently selected project
@@ -56,7 +56,7 @@ Now let's build a cool demo!
       location = "US"
     );
    ```
-2. Similarly, create a BigQuery table named `user_access_events` within this dataset for where the raw network access logs will be streamed to.
+4. Similarly, create a BigQuery table named `user_access_events` within this dataset for where the raw network access logs will be streamed to.
 
    ```
    CREATE OR REPLACE TABLE `Cymbal_Cyber.user_access_events`
@@ -80,7 +80,7 @@ Now let's build a cool demo!
    );
    ```
 
-3. Create a BigQuery table named `network_events` for where the network connection and firewall access logs will be streamed to.
+5. Create a BigQuery table named `network_events` for where the network connection and firewall access logs will be streamed to.
 
    ```
    CREATE OR REPLACE TABLE `Cymbal_Cyber.network_events`
@@ -111,7 +111,7 @@ Now let's build a cool demo!
    );
    ```
 
-4. Create a BigQuery table named `adk_threat_assessment` for storing the final output and reasoning from the ADK agent workflow for each escalated network threat.
+6. Create a BigQuery table named `adk_threat_assessment` for storing the final output and reasoning from the ADK agent workflow for each escalated network threat.
 
    ```
    CREATE OR REPLACE TABLE `Cymbal_Cyber.adk_threat_assessment` (
@@ -130,15 +130,15 @@ Now let's build a cool demo!
    );
    ```
 
-5. Create a BigQuery remote connection for the object tables named `continuous-query-vertex-ai-connection` in the Cloud Console [using these steps](https://cloud.google.com/bigquery/docs/bigquery-ml-remote-model-tutorial#Create-Connection).
+7. Create a BigQuery remote connection for the object tables named `continuous-query-vertex-ai-connection` in the Cloud Console [using these steps](https://cloud.google.com/bigquery/docs/bigquery-ml-remote-model-tutorial#Create-Connection).
 
-6. After the connection has been created, click "Go to connection", and in the Connection Info pane, copy the service account ID for use in the next step.
+8. After the connection has been created, click "Go to connection", and in the Connection Info pane, copy the service account ID for use in the next step.
 
-   <img width="811" height="267" alt="Screenshot 2025-12-13 at 2 25 32 PM" src="https://github.com/user-attachments/assets/e9b409f6-d457-4130-ae20-9a0dacf1d925" />
-   
-7. Grant `Vertex AI User` and `Storage Object Viewer` role IAM access to the service account ID you just copied.
+   <img width="1622" height="534" alt="image" src="https://github.com/user-attachments/assets/4708d212-db40-46c9-96eb-242711976ac0" />
 
-8. Create a Service Account named `bq-continuous-query-sa` which will be leveraged to orchestrate the full demo. The service account will be used to run the continuous query, write data to Pub/Sub, perform ADK actions, write to GCS, etc. This service account will require the following permissions:
+9. Grant `Vertex AI User` and `Storage Object Viewer` role IAM access to the service account ID you just copied.
+
+10. Create a Service Account named `bq-continuous-query-sa` which will be leveraged to orchestrate the full demo. The service account will be used to run the continuous query, write data to Pub/Sub, perform ADK actions, write to GCS, etc. This service account will require the following permissions:
     - BigQuery Connection User
     - BigQuery Data Editor
     - BigQuery Data Viewer
@@ -151,11 +151,11 @@ Now let's build a cool demo!
     - Storage Object User
     - Vertex AI User (AKA AI Platform User)
     
-      <img width="816" height="360" alt="Screenshot 2025-12-13 at 2 36 32 PM" src="https://github.com/user-attachments/assets/fda92cfe-0f49-42cd-bcc5-5d31738b144b" />
+      <img width="1632" height="720" alt="image" src="https://github.com/user-attachments/assets/78ad1b05-c093-4b37-be59-bd82fc9bd1e2" />
 
     **NOTE: if you have issues with this demo, it is 9 times out of 10 related to an IAM permissions issue.**
    
-9. Within the Cloud Console, create three GCS buckets. 
+11. Within the Cloud Console, create three GCS buckets. 
 
     **Note: because GCS buckets must be gloably unique, you'll have to choose unique names which will be leveraged later on**
     
@@ -163,7 +163,7 @@ Now let's build a cool demo!
      -  cymbal-cyber-adk-escalations-bucket_<your_project_id> for the events ADK escalates to the human SOC team
      -  cymbal-cyber-screenshots_<your_project_id> for the screenshot images used in the multi-modal piece of the demo
 
-10. This demo uses ADK to perform a visual analysis of screnshots taken from the user's device at the time these events were generated*. This is done using [BigQuery objects tables](https://docs.cloud.google.com/bigquery/docs/object-table-introduction). We'll first create a BigQuery object table named `screenshots_object_table` by running the following SQL query back in the BigQuery editor:
+12. This demo uses ADK to perform a visual analysis of screnshots taken from the user's device at the time these events were generated*. This is done using [BigQuery objects tables](https://docs.cloud.google.com/bigquery/docs/object-table-introduction). We'll first create a BigQuery object table named `screenshots_object_table` by running the following SQL query back in the BigQuery editor:
 
     ```
     CREATE OR REPLACE EXTERNAL TABLE `Cymbal_Cyber.screenshots_object_table`
