@@ -17,7 +17,7 @@ This demo leverages a powerful combination of Google Cloud services to create a 
 - Human-in-the-Loop: Includes a simple Security Operations Center (SOC) UI built with Streamlit, allowing human analysts to review and act upon threats escalated by the AI agent.
 - Simple agent logging and analytics using [BigQuery Agent Analytics for the Google ADK](https://cloud.google.com/blog/products/data-analytics/introducing-bigquery-agent-analytics).
 
-You can watch a recording of a similar demo here: **[YouTube LINK](https://youtu.be/9u6EhnHtVRY?t=683)**
+You can watch a recording of a very similar demo here: **[YouTube LINK](https://youtu.be/9u6EhnHtVRY?t=683)** (a new recording will be made soon)
 
 **A few notes**: 
    - BigQuery continuous query stateful data processing (supporting aggregations, windowing, and join operations) are only available via an allowlist only preview. You can register your interest for this preview [HERE](https://forms.gle/PUhnigiWDJDWNbWA9).
