@@ -41,6 +41,7 @@ Now let's build a cool demo!
    - BigQuery Connection Admin (to create a remote connection)
    - BigQuery Resource Editor (to create a slot reservation and assignment)
    - BigQuery User (to run the continuous query)
+   - Colab Enterprise User (to run the Colab notebooks)
    - Storage Admin (to create GCS buckets and upload files)
    - Service Account Admin (to create a service account)
    - Service Account User (to attach service accounts to services)
