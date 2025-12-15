@@ -196,13 +196,13 @@ To demonstrate this environment at scale, we're going to use two Colab Enterpris
 
    <img width="1542" height="476" alt="image" src="https://github.com/user-attachments/assets/e8d5baf8-a8e5-4910-ab6c-3cf5e2d2794e" />
 
-2. This first notebook will be the benign users notebook. Within the empty notebook code block, paste in the Python code from [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/benign_users_notebook_code.py). 
+2. This first notebook will be the benign users notebook. Within the empty notebook code block, paste in the Python code from [HERE](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/blob/main/other_code/benign_users_notebook_code.py). 
 
    Since this notebook is running within BigQuery, the project details will be captured properly, so there shouldn't be anything you need to change within the code itself. But do review how the code works.
 
    <img width="1914" height="1302" alt="image" src="https://github.com/user-attachments/assets/e57a7edd-5b1e-4fef-9427-9a91370d31fa" />
 
-3. Create a separate second BigQuery Colab notebook for the malicious events generator. Within the empty notebook code block, paste in the Python code from [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/malicious_users_notebook_code.py). 
+3. Create a separate second BigQuery Colab notebook for the malicious events generator. Within the empty notebook code block, paste in the Python code from [HERE](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/blob/main/other_code/malicious_users_notebook_code.py). 
 
    Similarly, you shouldn't have to modify the code if you are using the natively integrated Colab notebooks within BigQuery.
 
@@ -245,7 +245,7 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
    python-dotenv 
    ```
 
-3. Copy the 55 screenshots from the [user_screenshots folder of this repo](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/tree/main/user_screenshots) into your GCS bucket `cymbal-cyber-screenshots_<your_project_id>`. 
+3. Copy the 55 screenshots from the [user_screenshots folder of this repo](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/tree/main/user_screenshots) into your GCS bucket `cymbal-cyber-screenshots_<your_project_id>`. 
 
    Rather than copying/moving the images to your GCS bucket, save some time by running a GCloud command like this:
    ```gcloud storage cp -r user_screenshots/ gs://cymbal-cyber-screenshots_<your_project_id>/```
@@ -271,7 +271,7 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
    
     - Change the Expiration period to "Never expire"
     - Change the acknowledgement deadline to 600 seconds
-    - Click "Add a Transform" and under the "Function Name" box name it "pubsub_to_adk_transform" and copy/paste the contents of the [pubsub_to_adk_transform.js file](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/pubsub_to_adk_transform.js)
+    - Click "Add a Transform" and under the "Function Name" box name it "pubsub_to_adk_transform" and copy/paste the contents of the [pubsub_to_adk_transform.js file](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/blob/main/other_code/pubsub_to_adk_transform.js)
     - Click the "Validate" button and ensure the validation passes
     
       <img width="1426" height="1056" alt="image" src="https://github.com/user-attachments/assets/c66dc828-b4df-4e5a-b9e6-572438e3bf17" />
@@ -374,7 +374,7 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
    
    <img width="2212" height="314" alt="image" src="https://github.com/user-attachments/assets/5c57d83b-4749-4330-b127-814bf4276356" />
       
-5. Go back to the BigQuery SQL editor and paste the SQL query found into a new tab [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/continuous_query.sql)
+5. Go back to the BigQuery SQL editor and paste the SQL query found into a new tab [HERE](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/blob/main/other_code/continuous_query.sql)
 
 6.  Before you can run your query, you must enable BigQuery continuous query mode. In the BigQuery editor, click More -> Continuous Query mode
 
@@ -397,7 +397,7 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
 12. Your demo now works!
 
 13. If you go back into BigQuery and query the `adk_threat_assessment` and `agent_events` tables, there's a variety of interesting insights you can glean. Such as:
-    - [How much noise is the Agent filtering out?](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/agent_filtering_noise.sql) This query breaks down the decisions to show what percentage of alerts were auto-closed (False Positives) versus how many required human attention.
-    - [Top 5 high-risk devices](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/top_suspicious_devices.sql). This query tells you which devices are most of the escalated threats coming from.
-    - [Most used ADK tools with errors](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/tool_usage_and_errors.sql). This query tells you what tool calls your agent made and captures any tool errors.
-    - [ADK token cost](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/adk_token_cost.sql). This query determines the number of tokens consumed by each ADK agent, allowing you to estimate costs.
+    - [How much noise is the Agent filtering out?](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/blob/main/other_code/agent_filtering_noise.sql) This query breaks down the decisions to show what percentage of alerts were auto-closed (False Positives) versus how many required human attention.
+    - [Top 5 high-risk devices](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/blob/main/other_code/top_suspicious_devices.sql). This query tells you which devices are most of the escalated threats coming from.
+    - [Most used ADK tools with errors](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/blob/main/other_code/tool_usage_and_errors.sql). This query tells you what tool calls your agent made and captures any tool errors.
+    - [ADK token cost](https://github.com/norlove/Real-time_Cyber_Security_AI_with_BigQuery_continuous_queries_and_ADK/blob/main/other_code/adk_token_cost.sql). This query determines the number of tokens consumed by each ADK agent, allowing you to estimate costs.
