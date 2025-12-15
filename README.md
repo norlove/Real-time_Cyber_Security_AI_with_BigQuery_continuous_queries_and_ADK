@@ -43,6 +43,7 @@ Now let's build a cool demo!
    - BigQuery User (to run the continuous query)
    - Storage Admin (to create GCS buckets and upload files)
    - Service Account Admin (to create a service account)
+   - Service Account User (to attach service accounts to services)
    - Project IAM Admin (to assign permissions to the service account)
    - Pub/Sub Editor (to create a Pub/Sub topic and subscription)
    - Vertex AI Administrator (to deploy ADK into Vertex AI Agent Engine)
