@@ -256,8 +256,9 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
 4. Change to your ADK_code folder and run the command ```python deploy_agent_script.py``` to deploy your ADK agentic framework into the Google Cloud Agent Engine ecosystem
     - You'll see something like this printed if the command runs successfully: `https://us-central1-aiplatform.googleapis.com/v1/projects/271115234308/locations/us-central1/reasoningEngines/7320420874383785984:streamQuery`
     - Copy this text as you'll need it later as your full agent resource ID!
-      <img width="1126" height="112" alt="Screenshot 2025-12-13 at 12 34 29 AM" src="https://github.com/user-attachments/assets/186e82da-234c-4709-8e51-328ec52da4b1" />
-     
+   
+      <img width="2252" height="224" alt="image" src="https://github.com/user-attachments/assets/63d714fa-3de8-4df0-b70f-3911d27003ca" />
+  
 5. Create the Pub/Sub topic named `cymbal_cyber_alerts` to receive the output from your BigQuery continuous query. Don't create any default subscription or anything.
 
 6. Create a Pub/Sub **PUSH** subscription named `adk_agent_trigger` connected to `cymbal_cyber_alerts` to write these events directly to ADK running in Agent Engine.
@@ -266,14 +267,14 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
     - For the Audience (optional) field include the same full agent resource ID you captured above.
     - Check the box "Enable payload unwrapping"
     
-      <img width="511" height="602" alt="Screenshot 2025-12-13 at 9 48 15 PM" src="https://github.com/user-attachments/assets/71592f03-61f6-4d18-8801-885cebf6f9f2" />
+      <img width="1022" height="1204" alt="image" src="https://github.com/user-attachments/assets/7516363e-0c2a-4ef9-ae11-89edc44fcc1a" />
    
     - Change the Expiration period to "Never expire"
     - Change the acknowledgement deadline to 600 seconds
     - Click "Add a Transform" and under the "Function Name" box name it "pubsub_to_adk_transform" and copy/paste the contents of the [pubsub_to_adk_transform.js file](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/pubsub_to_adk_transform.js)
     - Click the "Validate" button and ensure the validation passes
     
-      <img width="713" height="528" alt="Screenshot 2025-12-13 at 9 51 38 PM" src="https://github.com/user-attachments/assets/b4af797b-5206-4c77-b70f-295dbc482b62" />
+      <img width="1426" height="1056" alt="image" src="https://github.com/user-attachments/assets/c66dc828-b4df-4e5a-b9e6-572438e3bf17" />
 
     - Create the Pub/Sub subscription
  
@@ -292,11 +293,11 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
 
    This is one file where you'll have to change some variables.
 
-   <img width="1288" height="305" alt="Screenshot 2025-12-13 at 10 03 33 PM" src="https://github.com/user-attachments/assets/23e2d4cb-a220-4b3a-ad56-9e59db565e87" />
+   <img width="2576" height="610" alt="image" src="https://github.com/user-attachments/assets/02c65172-d190-4d6c-b351-516a8ae6d989" />
 
 10. Click the Local URL link provided with the specific port (`Local URL: http://localhost:8501`). This will open up a new tab where you will see the security alerts as they come in.
 
-    <img width="1141" height="473" alt="Screenshot 2025-12-13 at 10 07 23 PM" src="https://github.com/user-attachments/assets/5ceed0d5-502d-4eb3-a758-3b0e2014c7a7" />
+    <img width="2282" height="946" alt="image" src="https://github.com/user-attachments/assets/760a173a-7543-45a5-ba33-f8cfb4d26979" />
 
 11. Back within Cloud Shell let Streamlit keep running. Click the plus icon to open another CLI window, change directories to ADK_code, and run the run_local script by running the command:
     ```./run_local.sh``` 
@@ -305,35 +306,35 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
 
     When prompted, select option 1 to send the malicious event to ADK. You should see a series of messages in your Cloud Shell environment which indicate that the event is being processed by our ADK agent. Once the prompt is "Human handoff request sent. Waiting for a response ..." you'll open your Streamlit tab.
 
-    <img width="1479" height="343" alt="Screenshot 2025-12-14 at 1 18 01 AM" src="https://github.com/user-attachments/assets/9559c46f-7aff-4ea9-9271-9d2135a8f712" />
+    <img width="2958" height="686" alt="image" src="https://github.com/user-attachments/assets/75622515-4183-495d-bd51-ef0b01a85cf3" />
 
 12. Go back into your Streamlit UI tab where you will see a new alert has been received. If you don't see one, you may have to refresh the window. Click on this alert on the left hand panel and review the details in the right hand panel. Click the "Link to user desktop screenshot" and make sure everything appears correct.
 
-    <img width="1410" height="394" alt="Screenshot 2025-12-14 at 1 18 41 AM" src="https://github.com/user-attachments/assets/a7340e3c-8843-42e2-95b6-3d7364157629" />
+    <img width="2820" height="788" alt="image" src="https://github.com/user-attachments/assets/618a4f64-10ad-41c2-8b10-34e1fa7f8914" />
         -   -   -   -  
-    <img width="1263" height="731" alt="Screenshot 2025-12-07 at 3 45 38 PM" src="https://github.com/user-attachments/assets/a8678a9a-f2b7-40d9-8ec2-074bfc256396" />
+    <img width="2526" height="1462" alt="image" src="https://github.com/user-attachments/assets/ec82d2f4-94e6-40cd-b8ee-14a2d34d362d" />
 
 13. Under the Your Response section, check the box for Flase Positive or Genuine Threat and provide a brief comment. Then click the Submit Response button.
 
-    <img width="911" height="367" alt="Screenshot 2025-12-14 at 1 19 54 AM" src="https://github.com/user-attachments/assets/f9e9de8a-41a2-4636-ba52-72eacbd3545f" />
+    <img width="1822" height="734" alt="image" src="https://github.com/user-attachments/assets/22d8a437-736e-4d5c-8cf8-d3a5718c1f53" />
 
 14. Back in your Cloud Shell tab, you'll see that the human decision was logged successfully and al pending logs should have been sent.
 
-    <img width="540" height="109" alt="Screenshot 2025-12-14 at 1 26 28 AM" src="https://github.com/user-attachments/assets/32626096-262b-499b-b5d5-0022332a9d1e" />
+    <img width="1080" height="218" alt="image" src="https://github.com/user-attachments/assets/0b674b8f-2056-4021-b8b2-1824e2b94f33" />
 
 15. You can now query your `adk_threat_assessment` table from BigQuery and confirm that this event and the human decision were successfully logged to BigQuery.
 
-    <img width="1115" height="340" alt="Screenshot 2025-12-14 at 1 27 13 AM" src="https://github.com/user-attachments/assets/292aa2b0-1aaf-4a71-b03e-15a58fac2103" />
+    <img width="2230" height="680" alt="image" src="https://github.com/user-attachments/assets/1f59ec6b-6cbd-4ce1-bc50-cd4b7ce6b950" />
 
 16. You can now be confident that ADK is working properly.
 
 17. You can also query the `agent_events` table to see the logs from your agent
 
-    <img width="1063" height="346" alt="Screenshot 2025-12-14 at 1 22 51 AM" src="https://github.com/user-attachments/assets/60594256-41e8-451e-9a20-530f539b8a19" />
+    <img width="2126" height="692" alt="image" src="https://github.com/user-attachments/assets/9b7a067e-ceec-44bb-b87f-bf6bf7c67163" />
 
 18. To test that Pub/Sub is working and triggering ADK properly, use the Cloud Console web UI to navigate to your Pub/Sub topic `cymbal_cyber_alerts`. Within the middle of the page, click the Messages tab and click Publish message
 
-    <img width="677" height="203" alt="Screenshot 2025-12-14 at 1 25 43 AM" src="https://github.com/user-attachments/assets/ca9d7c6e-71aa-488e-bb95-9ad1f46df31f" />
+    <img width="1354" height="406" alt="image" src="https://github.com/user-attachments/assets/7e243e91-cef6-4b7c-89e5-0fab8cdd12e8" />
 
 19. Test if your subscription (and therefore ADK) can receive a manually published message by pasting in the below and clicking Publish.
     ```
@@ -359,36 +360,35 @@ Again any code which has "# --- UNIQUE PROJECT CONFIGURATION DETAILS BELOW ---" 
 
 1. BigQuery continuous queries require a BigQuery Enterprise or Enterprise Plus reservation [[ref](https://cloud.google.com/bigquery/docs/continuous-queries-introduction#reservation_limitations)]. Create one now named "bq-continuous-queries-reservation" in the US multi-region, with a max reservation size of 50 slots, and a slot baseline of 0 slots (to leverage slot autoscaling).
    
-   ![Screenshot 2025-04-24 at 1 50 22 PM](https://github.com/user-attachments/assets/36ae54de-05fb-4cb7-a88f-a73ff92c73b4)
+   <img width="504" height="536" alt="image" src="https://github.com/user-attachments/assets/9cb9c221-a89c-4a7c-8361-6701b27c367b" />
 
 2. Once the reservation has been created, click on the three dots under Actions, and click "Create assignment". 
 
-      <img width="212" alt="Screenshot 2024-08-01 at 6 26 21 PM" src="https://github.com/user-attachments/assets/2d71fe08-d3c0-4d35-ab4a-769120f535e4">
+   <img width="424" height="402" alt="image" src="https://github.com/user-attachments/assets/7c0fa90c-4e42-4470-b434-4c36c85371b8" />
 
 3. Click Browse and find the project you are using for this demo. Then Select "CONTINUOUS" as the Job Type. Click Create.
 
-   <img width="523" height="452" alt="Screenshot 2025-12-14 at 2 05 24 PM" src="https://github.com/user-attachments/assets/af3e7d8a-20dd-4b96-970a-1b3489b72cfb" />
+   <img width="1046" height="904" alt="image" src="https://github.com/user-attachments/assets/b899e152-1458-4833-8995-52ad4ab35cbd" />
 
 4. You'll now see your assignment created under your reservation:
    
-   <img width="1106" height="157" alt="Screenshot 2025-12-14 at 2 06 17 PM" src="https://github.com/user-attachments/assets/49979c11-8f6f-4a8a-ac9f-d6a346bdb3a6" />
+   <img width="2212" height="314" alt="image" src="https://github.com/user-attachments/assets/5c57d83b-4749-4330-b127-814bf4276356" />
       
 5. Go back to the BigQuery SQL editor and paste the SQL query found into a new tab [HERE](https://github.com/norlove/BigQuery_Continuous_Query--Stateful_Stream-to-Stream_Joins_with_ADK/blob/main/other_code/continuous_query.sql)
 
 6.  Before you can run your query, you must enable BigQuery continuous query mode. In the BigQuery editor, click More -> Continuous Query mode
 
-    <img width="957" height="290" alt="Screenshot 2025-12-14 at 2 08 09 PM" src="https://github.com/user-attachments/assets/a9c64a75-7a44-4a27-8f91-4b19a9a56242" />
+    <img width="1914" height="580" alt="image" src="https://github.com/user-attachments/assets/e3a4b653-13ea-4029-9496-32828922268f" />
 
 7. When the window opens, click the button CONFIRM to enable continuous queries for this BigQuery editor tab.
 
 8. Since we are writing the results of this continuous query to a Pub/Sub topic, you must also run this query using a Service Account [[ref](https://cloud.google.com/bigquery/docs/continuous-queries#choose_an_account_type)]. We'll use the service account we created earlier. Click More -> Query Settings and scroll down to the Continuous query section and select your service account "bq-continuous-query-sa" and click Save.
 
-   <img width="435" height="150" alt="Screenshot 2025-12-14 at 2 09 13 PM" src="https://github.com/user-attachments/assets/b5eb30d1-f229-44aa-a421-b1b13474073b" />
+   <img width="870" height="300" alt="image" src="https://github.com/user-attachments/assets/3c55eeda-4519-4321-9977-1c6b2576116b" />
 
 9. Your continuous query should now be valid.
 
-   <img width="762" height="358" alt="Screenshot 2025-12-14 at 2 10 17 PM" src="https://github.com/user-attachments/assets/41373b47-17ee-43f7-a31b-0ed9245078a0" />
-
+   <img width="1524" height="716" alt="image" src="https://github.com/user-attachments/assets/8c59b0d6-aa88-400a-ac6d-dd8316fa1b5d" />
     
 10. Start up the continuous query (FYI it generally takes 1 - 3 minutes to fully start and begin processing data), start the benign events generator notebook, and when ready initiate the malicious events notebook.
 
