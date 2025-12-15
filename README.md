@@ -46,6 +46,7 @@ Now let's build a cool demo!
    - Storage Admin (to create GCS buckets and upload files)
    - Service Account Admin (to create a service account)
    - Service Account User (to attach service accounts to services)
+   - Service Account Token Creator (to create short lived credentials when creating the GCS signed URL)
    - Project IAM Admin (to assign permissions to the service account)
    - Pub/Sub Editor (to create a Pub/Sub topic and subscription)
    - Vertex AI Administrator (to deploy ADK into Vertex AI Agent Engine)
