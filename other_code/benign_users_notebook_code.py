@@ -24,7 +24,11 @@ except Exception as e:
 ACCESS_TABLE_ID = f"{PROJECT_ID}.Cymbal_Cyber.user_access_events"
 NETWORK_TABLE_ID = f"{PROJECT_ID}.Cymbal_Cyber.network_events"
 
-MESSAGES_PER_SECOND_TARGET = 50
+MESSAGES_PER_SECOND_TARGET = 50 # See note below on scale
+# This demo is designed to be built at a low cost point and with default project quotas. BigQuery,
+# Pub/Sub, and Vertex AI are all highly scalable services and can operate at far greater throughput
+# than 50 events per second, however if you increase this rate, you'll likely run into the default Vertex AI
+# project quotas which will result in ADK not processing some records due to quota exceeded errors.
 REPORTING_INTERVAL_SECONDS = 10
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
