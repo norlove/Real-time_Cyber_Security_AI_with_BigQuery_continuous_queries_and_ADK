@@ -214,7 +214,9 @@ To demonstrate this environment at scale, we're going to use two Colab Enterpris
 
    <img width="2370" height="316" alt="image" src="https://github.com/user-attachments/assets/82720fd5-06c8-40f2-9ab8-b03fcca0fb87" />
 
-5. Run both notebooks independently. The benign notebook will continue to run in a streaming looped fashion until stopped and the malicious events notebook will only execute once and insert 250 malicious events into the BigQuery tables created previously.
+5. Run both notebooks independently. The benign notebook will continue to run in a streaming looped fashion, streaming 50 events per second until stopped and the malicious events notebook will only execute once and insert 250 malicious events into the BigQuery tables created previously.
+
+    A note on scalability: this demo is designed to be built at a low cost point and with default project quotas. BigQuery, Pub/Sub, and Vertex AI are all highly scalable services and can operate at far greater throughput than 50 events per second, however if you increase this rate, you'll likely run into the default Vertex AI project quotas.
 
 6. Ensure both the `network_events` and `user_access_events` tables in BigQuery are receiving the traffic by running some simple SELECT queries
    First to make sure the benign users notebook is working:
