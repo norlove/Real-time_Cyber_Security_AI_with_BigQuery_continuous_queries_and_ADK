@@ -63,7 +63,7 @@ def deploy_agent() -> str:
     # 2. Deploy using the verified requirements
     remote_app = agent_engines.create(
         app,
-        display_name="bq_cq_app_v002",
+        display_name="bq_cymbal_cyber_v3",
         requirements=[
             "google-cloud-aiplatform[adk,agent_engines]>=1.119.0", 
             "google-adk>=1.15.1",
